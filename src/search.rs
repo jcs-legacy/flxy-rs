@@ -140,7 +140,8 @@ impl SearchBase {
 }
 
 fn is_separator(c: char) -> bool {
-    return c.is_whitespace() || c.eq(&'-') || c.eq(&'_') || c.eq(&':') || c.eq(&'.') || c.eq(&'/') || c.eq(&'\\');
+    return c.is_whitespace() //|| c.eq(&'-') || c.eq(&'_') || c.eq(&':') || c.eq(&'.') || c.eq(&'/') || c.eq(&'\\')
+        ;
 }
 
 pub fn score(str: &str, pattern: &str) -> Option<f32> {
