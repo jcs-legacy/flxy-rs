@@ -258,7 +258,7 @@ impl LineInfo {
         avg_dist * DIST_WEIGHT + heat_sum * HEAT_WEIGHT + self.factor * FACTOR_REDUCE
     }
 
-    fn score<'a>(&self, query: &'a [char]) -> Option<f32> {
+    pub fn score<'a>(&self, query: &'a [char]) -> Option<f32> {
         let mut position = vec![0; query.len()];
 
         let mut lists: Vec<&[usize]> = Vec::with_capacity(query.len());
