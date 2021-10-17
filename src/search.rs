@@ -139,6 +139,12 @@ impl SearchBase {
     }
 }
 
+pub fn score(str: &str, pattern: &str) -> Option<f32> {
+    let line_info = LineInfo::new(str, 0.0);
+    let composed: Vec<char> = pattern.nfkc().filter(|ch| !ch.is_whitespace()).collect();
+    line_info.score(&composed)
+}
+
 impl LineInfo {
     /// Constructs a new LineInfo objects from the given item.
     ///
@@ -247,18 +253,18 @@ impl LineInfo {
             avg_dist = 0.0;
         } else {
             avg_dist = position.windows(2)
-                               .map(|pair| pair[1] as f32 - pair[0] as f32)
-                               .sum::<f32>() / position.len() as f32;
+                .map(|pair| pair[1] as f32 - pair[0] as f32)
+                .sum::<f32>() / position.len() as f32;
         }
 
         let heat_sum: f32 = position.iter()
-                                    .map(|idx| self.heat_map[*idx])
-                                    .sum();
+            .map(|idx| self.heat_map[*idx])
+            .sum();
 
         avg_dist * DIST_WEIGHT + heat_sum * HEAT_WEIGHT + self.factor * FACTOR_REDUCE
     }
 
-    pub fn score<'a>(&self, query: &'a [char]) -> Option<f32> {
+    fn score<'a>(&self, query: &'a [char]) -> Option<f32> {
         let mut position = vec![0; query.len()];
 
         let mut lists: Vec<&[usize]> = Vec::with_capacity(query.len());
