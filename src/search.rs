@@ -31,7 +31,7 @@ pub struct LineInfo {
 
 #[derive(PartialEq, Eq)]
 enum CharClass {
-    Whitespace,
+    Separator,
     Numeric,
     Alphabetic,
     First,
@@ -139,6 +139,10 @@ impl SearchBase {
     }
 }
 
+fn is_separator(c: char) -> bool {
+    return c.is_whitespace() || c.eq(&'-') || c.eq(&'_') || c.eq(&':') || c.eq(&'.') || c.eq(&'/') || c.eq(&'\\');
+}
+
 pub fn score(str: &str, pattern: &str) -> Option<f32> {
     if str.is_empty() || pattern.is_empty() {
         return None;
@@ -175,8 +179,8 @@ impl LineInfo {
                 }
             }
 
-            if c.is_whitespace() || c.eq(&'-') || c.eq(&'_') || c.eq(&':') || c.eq(&'.') || c.eq(&'/') || c.eq(&'\\') {
-                cur_class = CharClass::Whitespace;
+            if is_separator(c) {
+                cur_class = CharClass::Separator;
                 ws_score = SEPARATOR_FACTOR;
             } else if c.is_numeric() {
                 if cur_class != CharClass::Numeric {
@@ -210,7 +214,7 @@ impl LineInfo {
                 }
             }
 
-            if cur_class != CharClass::Whitespace {
+            if cur_class != CharClass::Separator {
                 map.entry(c).or_insert(Vec::default()).push(idx);
                 if c.is_uppercase() {
                     for lc in c.to_lowercase() {
