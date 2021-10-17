@@ -148,7 +148,7 @@ pub fn score(str: &str, pattern: &str) -> Option<f32> {
         return None;
     }
     let line_info = LineInfo::new(str, 0.0);
-    let composed: Vec<char> = pattern.nfkc().collect();
+    let composed: Vec<char> = pattern.nfkc().filter(|ch| !ch.is_whitespace()).collect();
     line_info.score(&composed)
 }
 
