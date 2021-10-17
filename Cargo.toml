@@ -1,6 +1,6 @@
 [package]
 name = "flxy"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Jen-Chieh Shen <jenchieh94@gmail.com>"]
 description = "Full-text searching and scoring of strings"
 repository = "https://github.com/jcs090218/flxy"
@@ -9,11 +9,6 @@ readme = "README.md"
 keywords = ["search", "fuzzy", "string"]
 license = "MIT"
 documentation = "https://docs.rs/flxy"
-
-[lib]
-path = "src/lib.rs"
-name = "flxy"
-crate-type = ["cdylib"]
 
 [dependencies]
 unicode-normalization = "0.1.19"
