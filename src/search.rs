@@ -175,9 +175,9 @@ impl LineInfo {
                 }
             }
 
-            if c.is_whitespace() {
+            if c.is_whitespace() || c.eq(&'-') || c.eq(&'_') || c.eq(&':') || c.eq(&'.') || c.eq(&'/') || c.eq(&'\\') {
                 cur_class = CharClass::Whitespace;
-                ws_score = WHITESPACE_FACTOR;
+                ws_score = SEPARATOR_FACTOR;
             } else if c.is_numeric() {
                 if cur_class != CharClass::Numeric {
                     cur_class = CharClass::Numeric;
@@ -221,7 +221,7 @@ impl LineInfo {
 
             heat.push(ws_score + cs_score);
 
-            ws_score *= WHITESPACE_REDUCE;
+            ws_score *= SEPARATOR_REDUCE;
             if !cs_change {
                 cs_score *= CLASS_REDUCE;
             }
