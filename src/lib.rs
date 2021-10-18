@@ -11,4 +11,4 @@ extern crate unicode_normalization;
 mod constants;
 mod search;
 
-pub use search::{SearchBase, LineInfo, score};
+pub use search::{LineInfo, score};

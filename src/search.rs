@@ -6,19 +6,11 @@
  * $Notice: See LICENSE.txt for modification and distribution information
  *                   Copyright © 2021 by Shen, Jen-Chieh $
  */
-use std::collections::{HashMap, BinaryHeap};
-use std::cmp::Ordering;
-use std::iter::FromIterator;
+use std::collections::HashMap;
 
 use unicode_normalization::UnicodeNormalization;
 
 use constants::*;
-
-/// Contains the searchable database
-#[derive(Debug)]
-pub struct SearchBase {
-    lines: Vec<LineInfo>,
-}
 
 /// Parsed information about a line, ready to be searched by a SearchBase.
 #[derive(Debug)]
@@ -38,105 +30,20 @@ enum CharClass {
     Other,
 }
 
-#[derive(Debug)]
-struct LineMatch<'a> {
-    score: f32,
-    factor: f32,
-    line: &'a str,
+fn char_class(c: char) -> CharClass {
+    let mut result = CharClass::Other;  // default to other
+    if is_separator(c) {
+        result = CharClass::Separator;
+    } else if c.is_numeric() {
+        result = CharClass::Numeric;
+    } else if c.is_alphabetic() {
+        result = CharClass::Alphabetic;
+    }
+    return result
 }
 
-impl<'a> Ord for LineMatch<'a> {
-    fn cmp(&self, other: &LineMatch) -> Ordering {
-        match self.score.partial_cmp(&other.score) {
-            Some(Ordering::Equal) | None => {
-                self.factor
-                    .partial_cmp(&other.factor)
-                    .unwrap_or(Ordering::Equal)
-            }
-            Some(order) => order,
-        }
-    }
-}
-
-impl<'a> PartialOrd for LineMatch<'a> {
-    fn partial_cmp(&self, other: &LineMatch) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl<'a> PartialEq for LineMatch<'a> {
-    fn eq(&self, other: &LineMatch) -> bool {
-        self.cmp(other) == Ordering::Equal
-    }
-}
-
-impl<'a> Eq for LineMatch<'a> {}
-
-/// Creates a LineInfo object with a factor of zero
-impl<T: Into<String>> From<T> for LineInfo {
-    fn from(item: T) -> LineInfo {
-        LineInfo::new(item, 0.0)
-    }
-}
-
-impl<V: Into<LineInfo>> FromIterator<V> for SearchBase {
-    fn from_iter<T: IntoIterator<Item = V>>(iterator: T) -> SearchBase {
-        SearchBase::new(iterator.into_iter().map(|item| item.into()).collect())
-    }
-}
-
-impl SearchBase {
-    /// Construct a new SearchBase from a Vec of LineInfos.
-    pub fn new(lines: Vec<LineInfo>) -> SearchBase {
-        SearchBase { lines: lines }
-    }
-
-    /// Perform a query of the SearchBase.
-    ///
-    /// number limits the number of matches returned.
-    ///
-    /// Matches any supersequence of the given query, with heuristics to order
-    /// matches based on how close they are to the given query.
-    pub fn query<'a, T: AsRef<str>>(&'a self, query: T, number: usize) -> Vec<&'a str> {
-        let query = query.as_ref();
-        if query.is_empty() {
-            // non-matching query
-            return vec![];
-        }
-
-        let mut matches: BinaryHeap<LineMatch> = BinaryHeap::with_capacity(number);
-
-        let composed: Vec<char> = query.nfkc().filter(|ch| !ch.is_whitespace()).collect();
-
-        for item in self.lines.iter() {
-            let score = match item.score(&composed) {
-                None => {
-                    // non-matching line
-                    continue;
-                }
-                Some(score) => score,
-            };
-
-            let match_item = LineMatch {
-                score: -score,
-                factor: -item.factor,
-                line: &item.line,
-            };
-
-            if matches.len() < number {
-                matches.push(match_item);
-            } else if let Some(mut other_item) = matches.peek_mut() {
-                if &match_item < &*other_item {
-                    // replace the "greatest" item with ours
-                    *other_item = match_item;
-                }
-            } else {
-                unreachable!("No item to peek at, but number of items greater than zero");
-            }
-        }
-
-        matches.into_sorted_vec().into_iter().map(|x| x.line).collect()
-    }
+fn is_separator(c: char) -> bool {
+    return c.is_whitespace() || c.eq(&'-') || c.eq(&'_') || c.eq(&':') || c.eq(&'.') || c.eq(&'/') || c.eq(&'\\');
 }
 
 fn is_separator(c: char) -> bool {
@@ -147,7 +54,12 @@ pub fn score(str: &str, pattern: &str) -> Option<f32> {
     if str.is_empty() || pattern.is_empty() {
         return None;
     }
-    let line_info = LineInfo::new(str, 0.0);
+    // boost for the exact match
+    let mut factor = 0.0;
+    if str == pattern {
+        factor = 10000.0;
+    }
+    let line_info = LineInfo::new(str, factor);
     let composed: Vec<char> = pattern.nfkc().filter(|ch| !ch.is_whitespace()).collect();
     line_info.score(&composed)
 }
@@ -167,59 +79,51 @@ impl LineInfo {
         let mut cs_score: f32 = 0.0;
         let mut cur_class = CharClass::First;
         let mut cs_change = false;
+        let mut last_class = CharClass::First;
 
         for (idx, c) in line.nfkc().enumerate() {
             if idx > MAX_LEN {
                 break;
             }
 
-            if !c.is_whitespace() {
-                if cur_class == CharClass::First {
-                    cs_score += FIRST_FACTOR;
-                }
-            }
+            cur_class = char_class(c);
 
-            if is_separator(c) {
-                cur_class = CharClass::Separator;
-                ws_score = SEPARATOR_FACTOR;
-            } else if c.is_numeric() {
-                if cur_class != CharClass::Numeric {
-                    cur_class = CharClass::Numeric;
-                    if !cs_change {
-                        cs_score += CLASS_FACTOR;
-                        cs_change = true;
+            match cur_class {
+                CharClass::Separator => {
+                    ws_score = SEPARATOR_FACTOR;
+                },
+                CharClass::First => {
+                    if !c.is_whitespace() {
+                        cs_score += FIRST_FACTOR;
                     }
-                } else {
-                    cs_change = false;
-                }
-            } else if c.is_alphabetic() {
-                if cur_class != CharClass::Alphabetic {
-                    cur_class = CharClass::Alphabetic;
-                    if !cs_change {
-                        cs_score += CLASS_FACTOR;
-                        cs_change = true;
-                    }
-                } else {
-                    cs_change = false;
-                }
-            } else {
-                if cur_class != CharClass::Other {
-                    cur_class = CharClass::Other;
-                    if !cs_change {
-                        cs_score += CLASS_FACTOR;
-                        cs_change = true;
-                    }
-                } else {
-                    cs_change = false;
-                }
-            }
+                },
+                _ => {
+                    match last_class {
+                        CharClass::Separator => {
+                            cs_score += 10.0;
+                        },
+                        _ => {
+                            // None..
+                        },
+                    };
 
-            if cur_class != CharClass::Separator {
-                map.entry(c).or_insert(Vec::default()).push(idx);
-                if c.is_uppercase() {
-                    for lc in c.to_lowercase() {
-                        map.entry(lc).or_insert(Vec::default()).push(idx);
+                    if cur_class != last_class {
+                        if !cs_change {
+                            cs_score += CLASS_FACTOR;
+                            cs_change = true;
+                        }
+                    } else {
+                        cs_change = false;
                     }
+                },
+            };
+
+            last_class = cur_class;
+
+            map.entry(c).or_insert(Vec::default()).push(idx);
+            if c.is_uppercase() {
+                for lc in c.to_lowercase() {
+                    map.entry(lc).or_insert(Vec::default()).push(idx);
                 }
             }
 
