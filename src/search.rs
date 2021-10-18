@@ -46,10 +46,6 @@ fn is_separator(c: char) -> bool {
     return c.is_whitespace() || c.eq(&'-') || c.eq(&'_') || c.eq(&':') || c.eq(&'.') || c.eq(&'/') || c.eq(&'\\');
 }
 
-fn is_separator(c: char) -> bool {
-    return c.is_whitespace() || c.eq(&'-') || c.eq(&'_') || c.eq(&':') || c.eq(&'.') || c.eq(&'/') || c.eq(&'\\');
-}
-
 pub fn score(str: &str, pattern: &str) -> Option<f32> {
     if str.is_empty() || pattern.is_empty() {
         return None;
@@ -77,7 +73,7 @@ impl LineInfo {
 
         let mut ws_score: f32 = 0.0;
         let mut cs_score: f32 = 0.0;
-        let mut cur_class = CharClass::First;
+        let mut cur_class;
         let mut cs_change = false;
         let mut last_class = CharClass::First;
 
