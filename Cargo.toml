@@ -1,6 +1,6 @@
 [package]
 name = "flxy"
-version = "0.1.17"
+version = "0.1.18"
 authors = ["Jen-Chieh Shen <jenchieh94@gmail.com>"]
 description = "Full-text searching and scoring of strings"
 repository = "https://github.com/jcs090218/flxy"
