@@ -1,5 +1,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![crates.io.d](https://img.shields.io/crates/d/flxy?style=flat-square)](https://crates.io/crates/flxy)
 
 > Base from https://github.com/jrasky/flx, for Emacs
 
