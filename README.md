@@ -5,7 +5,9 @@
 > Base from https://github.com/jrasky/flx, for Emacs
 
 # flx
-Fast, character-based search library in Rust
+> Fast, character-based search library in Rust
+
+[![CI](https://github.com/jcs090218/flxy/actions/workflows/ci.yml/badge.svg)](https://github.com/jcs090218/flxy/actions/workflows/ci.yml)
 
 [Documentation](https://docs.rs/flx)
 
